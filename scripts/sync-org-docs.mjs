@@ -381,8 +381,8 @@ function discoverRepos(exec = execSync, sleep = sleepSync) {
   return undefined;
 }
 
-// Synchronous sleep so main() (all execSync, no async) can back off between
-// discovery attempts without a rewrite to async/await. Atomics.wait blocks
+// Synchronous sleep lets discovery back off between attempts while keeping
+// its execSync-based interface. Atomics.wait blocks
 // the event loop on purpose — there is nothing else for this script to do
 // while it waits.
 function sleepSync(ms) {
@@ -429,7 +429,7 @@ function docOutputNames(rootFiles, docFiles) {
   return outputs;
 }
 
-function main() {
+async function main() {
   // Discover repos from the org.
   const {listed, publicRepos, fatal, warnings, attempts} = discoverRepos();
 
@@ -497,7 +497,7 @@ function main() {
       // ── README.md → index page ──
       const readmePath = join(dir, 'README.md');
       if (existsSync(readmePath)) {
-        const content = readmeIndex(readFileSync(readmePath, 'utf8'), {
+        const content = await readmeIndex(readFileSync(readmePath, 'utf8'), {
           repo, branch, label: meta.label, position: localPos++, slug,
           status: meta.status || 'unknown',
         });
@@ -727,6 +727,6 @@ export {
 // The command module is imported by tests for orchestration and reconciliation
 // helpers; its guarded main() call keeps those imports network-free.
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main();
+  await main();
   await markUnparseable(WRITTEN);
 }

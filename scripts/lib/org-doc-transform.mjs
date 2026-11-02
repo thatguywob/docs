@@ -4,8 +4,6 @@
 // The command entrypoint owns repository discovery and destination mutation;
 // callers can use these helpers without loading that orchestration.
 
-import {slug as githubSlug} from 'github-slugger';
-
 const ORG = 'tuna-os';
 
 // onProse applies fn to the prose of a markdown document, leaving fenced code
@@ -286,11 +284,14 @@ function getStatusBanner(status) {
 
 // Docusaurus omits IDs on H1 headings. Retarget local links to the removed
 // README title to the page top instead of leaving a fragment with no target.
-function readmeIndex(content, {repo, branch, label, position, slug, status = 'unknown'}) {
+async function readmeIndex(content, {repo, branch, label, position, slug, status = 'unknown'}) {
   let body = fixRelativeLinks(sanitizeHtml(content), repo, '', branch);
   const title = body.match(/^# (.*)\n\n?/);
   if (title) {
     body = body.slice(title[0].length);
+    // STE imports the sync helpers without npm dependencies installed. Load
+    // the slugger only when rendering a README, as markUnparseable does for MDX.
+    const {slug: githubSlug} = await import('github-slugger');
     const anchor = githubSlug(title[1]);
     body = onProse(body, prose => prose
       .replace(/(\]\(\s*)#([^\s)]+)(?=[\s)])/g,
