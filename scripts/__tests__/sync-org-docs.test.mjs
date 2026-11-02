@@ -91,9 +91,15 @@ test('sync metadata imports without npm dependencies for STE detection', () => {
     }
     const moduleUrl = pathToFileURL(join(root, 'scripts', 'sync-org-docs.mjs')).href;
     execFileSync(process.execPath, ['--input-type=module', '-e', `
-      import {isSyncedIndex, frontmatter, HAND_AUTHORED} from ${JSON.stringify(moduleUrl)};
+      import {isSyncedIndex, frontmatter, HAND_AUTHORED, readmeIndex} from ${JSON.stringify(moduleUrl)};
       if (!isSyncedIndex(frontmatter('Example', 1, 'example', 'stable'))) process.exit(1);
       if (!HAND_AUTHORED.has('mariner')) process.exit(1);
+      const page = await readmeIndex('Plain README without a title.', {
+        repo: 'example', branch: 'main', label: 'Example',
+        position: 1, slug: 'example', status: 'stable',
+      });
+      if (!isSyncedIndex(page)) process.exit(1);
+      if (!page.endsWith('Plain README without a title.')) process.exit(1);
     `], {cwd: root});
   } finally {
     rmSync(root, {recursive: true, force: true});
